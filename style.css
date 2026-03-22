@@ -1,0 +1,160 @@
+/* --- Button Loading Animations --- */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* This class gets added by JavaScript when you click */
+.loading {
+  position: relative !important;
+  color: transparent !important; /* Hides the text so it doesn't overlap spinner */
+  pointer-events: none; /* Prevents multiple clicks while loading */
+  opacity: 0.8;
+}
+
+/* The actual spinning circle */
+.loading::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: calc(50% - 9px);
+  left: calc(50% - 9px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Subtle click effect for all buttons */
+button:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+/* --- Success State --- */
+.success-glow {
+  background-color: #238636 !important; /* GitHub Green */
+  border-color: #2ea043 !important;
+  transition: all 0.3s ease;
+}
+
+/* .success-glow::after {
+  content: "✓"; 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #238636;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-top: 2px solid white;
+  background-color: rgb(176, 15, 15);
+} */
+
+/* Ensure the text stays hidden during success */
+.success-glow-text-hide {
+    color: white;
+}
+
+
+
+
+/* --- Error State --- */
+.error-shake {
+  background-color: #da3633 !important; /* GitHub Red */
+  border-color: #f85149 !important;
+  animation: shake 0.4s ease-in-out;
+  transition: all 0.3s ease;
+}
+
+/* .error-shake::after {
+  content: "✕";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+} */
+
+/* Shake animation to grab attention */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
+
+
+#terminal {
+  height: calc(100vh - 250px); /* Adjust based on your header/buttons */
+  background: #000000;
+  color: #00ff41; /* Classic Matrix Green */
+  padding: 15px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  overflow-y: scroll; /* Always show scrollbar track */
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  display: block; /* Ensure it stays as a block container */
+}
+
+/* The individual log lines */
+.log-line {
+  border-bottom: 1px solid rgba(0, 255, 65, 0.05);
+  padding: 2px 0;
+  animation: streamFade 0.2s ease-out;
+}
+
+@keyframes streamFade {
+  from { opacity: 0.5; transform: translateX(-2px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Hide scrollbar track but keep functionality */
+#terminal::-webkit-scrollbar { width: 4px; }
+#terminal::-webkit-scrollbar-thumb { background: #238636; }
+
+
+/* Button Success Animation */
+.success-glow {
+  background: #238636 !important;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+  transition: all 0.3s ease;
+  color: white !important;
+}
+
+/* Button Error Animation */
+.error-shake {
+  background: #f85149 !important;
+  animation: shake 0.4s ease-in-out;
+  color: white !important;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Resuming Badge Pulse */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.6; }
+}
+
+
+.network-badge {
+  display: inline-block;
+  text-align: right;           
+  font-size: 10px;             /* Smaller size as requested */
+  font-family: 'Roboto Mono', monospace;
+  padding: 2px 6px;            /* Added slight padding for a "pill" look */
+  font-weight: 600;
+  text-transform: uppercase;   /* Makes the network names look professional */
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03); /* Very subtle background */
+}

@@ -1,0 +1,58 @@
+{
+  "name": "phrase-finder-pro",
+  "version": "1.0.0",
+  "main": "electron-main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron electron-main.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dev": "nodemon --watch electron-main.js --watch payload.js --watch renderer.js --watch index.html --exec \"electron .\""
+  },
+  "dependencies": {
+    "@polkadot/keyring": "^14.0.2",
+    "@polkadot/util-crypto": "^14.0.2",
+    "@solana/web3.js": "^1.98.4",
+    "axios": "^1.5.0",
+    "bip39": "^3.1.0",
+    "bitcoinjs-lib": "^7.0.1",
+    "cardano-crypto.js": "^6.1.2",
+    "dotenv": "^16.0.0",
+    "ed25519-hd-key": "^1.3.0",
+    "ethers": "^6.9.0",
+    "jsonwebtoken": "^9.0.3",
+    "keccak": "^3.0.4",
+    "ripple-lib": "^1.10.1",
+    "tiny-secp256k1": "^2.2.4",
+    "tronweb": "^6.2.2",
+    "wif": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron": "30.2.0",
+    "electron-builder": "^24.6.0",
+    "electron-reload": "^2.0.0-alpha.1",
+    "nodemon": "^3.1.14"
+  },
+  "build": {
+    "appId": "com.wallet.recovery",
+    "productName": "Wallet Recovery Tool",
+    "files": [
+      "**/*"
+    ],
+    "icon": "assets/logo.png", 
+    "mac": {
+      "icon": "assets/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    }
+  }
+}

@@ -1,0 +1,1201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Phrase Finder Pro | Recovery Suite</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+      :root {
+        --bg: #0d1117;
+        --side: #010409;
+        --accent: #238636;
+        --accent-hover: #2ea043;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --text-dim: #8b949e;
+        --error: #f85149;
+        --card-bg: #161b22;
+        --tab-inactive: #21262d;
+        --info-blue: #58a6ff;
+      }
+
+      /* --- Reset & Base --- */
+      * {
+        box-sizing: border-box;
+        outline: none;
+      }
+      body {
+        margin: 0;
+        height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", sans-serif;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* --- Sidebar & Layout --- */
+      nav {
+        width: 280px;
+        background: var(--side);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+      .nav-header {
+        padding: 30px 25px;
+        font-weight: 700;
+        color: #fff;
+        border-bottom: 1px solid var(--border);
+        font-size: 20px;
+      }
+      .nav-header span {
+        color: var(--accent);
+      }
+      .nav-item {
+        padding: 16px 25px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 14px;
+        color: var(--text-dim);
+        border-left: 4px solid transparent;
+      }
+      .nav-item.active {
+        background: linear-gradient(90deg, rgba(35, 134, 54, 0.1), transparent);
+        border-left-color: var(--accent);
+        color: #fff;
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        min-width: 0;
+      }
+      header {
+        height: 70px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 40px;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+
+      /* --- Auth Screen Overlay --- */
+      #auth-screen {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(1, 4, 9, 0.95);
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+      }
+
+      /* --- Page & Scrolling Logic --- */
+      .page {
+        display: none;
+        height: calc(100vh - 70px);
+        overflow-y: auto;
+        padding: 40px 0;
+      }
+      .page.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+      .page-container {
+        padding: 0 40px 60px 40px;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+      }
+
+      /* --- Inner Tabs System --- */
+      .tab-container {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 20px;
+        background: #010409;
+        padding: 4px;
+        border-radius: 8px;
+        width: fit-content;
+        border: 1px solid var(--border);
+      }
+      .inner-tab {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: 0.2s;
+      }
+      .inner-tab.active {
+        background: var(--tab-inactive);
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+
+      /* --- UI Components --- */
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 24px;
+      }
+      .instruction-box {
+        background: rgba(35, 134, 54, 0.05);
+        border: 1px dashed var(--accent);
+        padding: 20px;
+        border-radius: 8px;
+        line-height: 1.6;
+      }
+
+      label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-bottom: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        background: #010409;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        color: #fff;
+        font-family: "JetBrains Mono";
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+
+      /* Responsive Textarea */
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      /* --- Slider Styling --- */
+      .performance-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 5px;
+        outline: none;
+        margin: 15px 0;
+      }
+      .performance-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--accent);
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 10px var(--accent);
+        transition: 0.2s;
+      }
+      .performance-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+
+      .btn {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: 0.2s;
+        position: relative;
+      }
+      .btn:hover {
+        background: var(--accent-hover);
+        color: white;
+      }
+      .btn-stop {
+        background: var(--error);
+        position: relative;
+      }
+      .btn-stop:hover {
+        background: var(--error);
+        color: white;
+      }
+
+      .btn-danger-outline {
+        background: transparent;
+        border: 1px solid var(--error);
+        color: var(--error);
+        padding: 14px 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: 0.2s;
+      }
+      .btn-danger-outline:hover {
+        background: rgba(248, 81, 73, 0.1);
+      }
+
+      #terminal {
+        background: #000;
+        color: #39ff14;
+        padding: 15px;
+        min-height: 500px;
+        font-family: "JetBrains Mono";
+        font-size: 13px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        line-height: 1.5;
+        /* white-space: pre-wrap; */
+      }
+
+      /* Table Styling for Help */
+      .perf-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 12px;
+      }
+      .perf-table th {
+        text-align: left;
+        color: var(--accent);
+        border-bottom: 1px solid var(--border);
+        padding: 8px;
+      }
+      .perf-table td {
+        padding: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      /* --- NEW: Auto-Save Badge Styling --- */
+      .auto-save-badge {
+        font-size: 11px;
+        color: var(--text-dim);
+        background: var(--side);
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #last-save-time {
+        font-weight: 600;
+        color: var(--accent);
+        transition: color 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="auth-screen">
+      <div class="card" style="width: 450px; text-align: center; position: relative;">
+        <span id="close-auth" style="position: absolute; right: 20px; top: 15px; color: var(--text-dim); cursor: pointer; font-size: 20px; font-weight: bold;">&times;</span>
+        <h2 style="color: var(--accent); margin-bottom: 10px">
+          Activation Required
+        </h2>
+        <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 25px">
+          Enter your license key to unlock the Pro Recovery Engine.
+        </p>
+
+        <label>Device Name</label>
+        <input
+          type="text"
+          id="hwid-field"
+          readonly
+          style="text-align: center; color: var(--accent)"
+        />
+
+        <label>License Key</label>
+        <input
+          type="text"
+          id="key-field"
+          placeholder="XXXX-XXXX-XXXX-XXXX"
+          style="text-align: center"
+        />
+
+        <p
+          id="auth-status-text"
+          style="font-size: 12px; margin-bottom: 15px; min-height: 15px"
+        ></p>
+
+        <button id="btn-activate" class="btn" style="width: 100%">
+          Activate License
+        </button>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-header"><span>Phrase </span>Finder Pro</div>
+      <div class="nav-item active" onclick="showPage('dash-page')">
+        📡 Live Console
+      </div>
+      <div class="nav-item" onclick="showPage('validator-page')">
+        🛡️ Seed Validator
+      </div>
+
+      <div
+        style="
+          margin-top: 20px;
+          padding: 0 25px 10px;
+          font-size: 11px;
+          color: var(--accent);
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        "
+      >
+        Settings
+      </div>
+      <div
+        class="nav-item"
+        onclick="showPage('recovery-page')"
+        style="padding-left: 35px"
+      >
+        ⚙️ Recovery Config
+      </div>
+      <div
+        class="nav-item"
+        onclick="showPage('reorder-page')"
+        style="padding-left: 35px"
+      >
+        🔄 Reorder Config
+      </div>
+
+          <!--  -->
+<div class="nav-item" onclick="showPage('pricing-page')"
+>
+  <i>💳</i> <span>Pricing</span>
+</div>
+<div class="nav-item" onclick="showPage('about-page')">
+  <i>ℹ️</i> <span>About & Support</span>
+</div>
+      <!--  -->
+
+      <div style="margin-top: auto; padding: 20px;">
+  <button id="sidebar-upgrade-btn" class="btn" style="width: 100%;">
+    Upgrade
+  </button>
+</div>
+    </nav>
+
+    <main>
+      <header>
+        <div id="header-title">Live Terminal Output</div>
+        <div style="display: flex; align-items: center; gap: 15px">
+          <div class="auto-save-badge">
+            <span style="font-size: 8px">💾</span> Disk Sync:
+            <span id="last-save-time">Never</span>
+          </div>
+          <div id="status-tag" style="font-size: 12px; color: var(--accent)">
+            ● System: Active
+          </div>
+        </div>
+      </header>
+
+      <div id="dash-page" class="page active">
+        <div class="page-container">
+          <div style="margin-bottom: 30px; display: flex; gap: 12px">
+            <button id="runRec" class="btn">Start Recovery</button>
+            <button id="runReo" class="btn">Start Reorder</button>
+            <button id="stopTask" class="btn btn-stop">Stop Process</button>
+          </div>
+          <div id="terminal">
+            > Initializing secure cryptographic bridge...
+            <div style="text-align: center">
+              <pre
+                style="
+                  color: var(--primary);
+                  background: transparent;
+                  font-size: clamp(7px, 2cqw, 14px);
+                  line-height: 1.2;
+                  font-family: &quot;Courier New&quot;, monospace;
+                  display: inline-block;
+                  text-align: left;
+                  font-weight: bold;
+                  text-shadow: 0 0 5px rgba(88, 166, 255, 0.3);
+                  padding: 35px;
+                "
+              >
+  ◢   ◤◢      ◢            ◢◢◢◢◢◢◢◢  ◢◢◢◢◢◢◢  ◢      ◢◢◢◢◢◢◢◢  ◢◢◢◢◢◢◢◢
+  ◢   ◤◢◢    ◢◢  ◢         ◢        ◢       ◢◢    ◢  ◢         ◢       
+  ◢ ◢ ◤◢◢◢  ◢◢◢  ◢         ◢◢◢◢◢    ◢◢◢◢◢◢  ◢◢◢  ◢◢  ◢◢◢◢◢     ◢◢◢◢◢   
+  ◢◢◢◢ ◢◢◢◢◢◢◢◢  ◢         ◢        ◢       ◢◢◢◢◢◢◢  ◢         ◢       
+  ◢◢◢  ◢ ◢◢◢  ◢  ◢◢◢◢◢◢◢◢  ◢◢◢◢◢◢◢◢  ◢◢◢◢◢◢◢  ◢    ◢◢  ◢◢◢◢◢◢◢◢  ◢◢◢◢◢◢◢◢
+  
+               — S E C U R E  P H R A S E  R E C O V E R Y —
+  </pre
+              >
+            </div>
+
+            <div style="text-align: center">
+              <div
+                style="
+                  color: var(--primary);
+                  font-family: sans-serif;
+                  font-size: 13px;
+                  opacity: 0.8;
+                  max-width: auto;
+                  /* border: 2px solid red; */
+                  line-height: 1.5;
+                  border-top: 1px solid rgba(88, 166, 255, 0.2);
+                  padding: 45px;
+
+                  text-align: center;
+                "
+              >
+                <p style="text-align: center">
+                  <strong>🔒 100% Local & Offline:</strong> This engine operates
+                  entirely on your local machine. No seed phrases, private keys,
+                  or derivation data ever leave your computer. Your hardware
+                  performs the calculations locally, ensuring your recovery
+                  process is
+                  <strong>completely private and secured</strong> from the
+                  internet.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="validator-page" class="page">
+        <div class="page-container">
+          <div class="card">
+            <h3 style="color: var(--accent); margin-top: 0">
+              🛡️ Seed Phrase Validator
+            </h3>
+            <p
+              style="font-size: 13px; color: var(--text-dim); line-height: 1.5"
+            >
+              Verify your 12 or 24-word backup. This tool checks the BIP39
+              wordlist, cryptographic checksum, and generates multiple Ethereum
+              derivation paths to confirm validity.
+            </p>
+
+            <label>Enter Mnemonic Seed Phrase</label>
+            <textarea
+              id="val-input"
+              rows="4"
+              placeholder="word1 word2 word3..."
+            ></textarea>
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                margin-top: 10px;
+              "
+            >
+              <div
+                class="instruction-box"
+                style="
+                  padding: 15px;
+                  border-style: solid;
+                  border-width: 1px;
+                  background: rgba(0, 0, 0, 0.2);
+                  min-height: 85px;
+                "
+              >
+                <label style="color: var(--info-blue)">BIP39 Wordlist</label>
+                <div
+                  id="check-words"
+                  style="
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-top: 5px;
+                    line-height: 1.4;
+                  "
+                >
+                  Waiting for input...
+                </div>
+              </div>
+              <div
+                class="instruction-box"
+                style="
+                  padding: 15px;
+                  border-style: solid;
+                  border-width: 1px;
+                  background: rgba(0, 0, 0, 0.2);
+                  min-height: 85px;
+                "
+              >
+                <label style="color: var(--info-blue)"
+                  >Checksum Integrity</label
+                >
+                <div
+                  id="check-sum"
+                  style="
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-top: 5px;
+                    line-height: 1.4;
+                  "
+                >
+                  Waiting for input...
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="instruction-box"
+              style="
+                margin-top: 15px;
+                border-style: solid;
+                border-width: 1px;
+                background: rgba(0, 0, 0, 0.2);
+                min-height: 110px;
+              "
+            >
+              <label style="color: var(--info-blue)"
+                >Derived Ethereum Addresses</label
+              >
+              <div
+                id="check-address"
+                style="
+                  font-family: &quot;JetBrains Mono&quot;;
+                  font-size: 12px;
+                  color: var(--text-dim);
+                  margin-top: 8px;
+                  word-break: break-all;
+                "
+              >
+                0x0000000000000000000000000000000000000000
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 25px">
+              <button id="runValidation" class="btn" style="flex: 2">
+                Verify Seed Integrity
+              </button>
+              <button
+                id="clearValidator"
+                class="btn-danger-outline"
+                style="flex: 1"
+              >
+                Clear Form
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="recovery-page" class="page">
+        <div class="page-container">
+          <div class="tab-container">
+            <div
+              class="inner-tab active"
+              onclick="switchInnerTab('recovery', 'form')"
+            >
+              Configuration
+            </div>
+            <div class="inner-tab" onclick="switchInnerTab('recovery', 'help')">
+              Instructions
+            </div>
+          </div>
+
+          <div id="recovery-form" class="content-section active">
+            <div class="card">
+              <label>Primary Wallet Profile</label>
+              <select
+                id="rec-wallet-type"
+                style="
+                  cursor: pointer;
+                  font-family: &quot;Inter&quot;, sans-serif;
+                "
+              >
+                <optgroup label="Popular Software Wallets">
+                  <option value="metamask">MetaMask / Web3 Standard</option>
+                  <option value="coinbase">Coinbase Wallet</option>
+                  <option value="trust">Trust Wallet (Multi-Chain)</option>
+                  <option value="exodus">Exodus / Atomic</option>
+                  <option value="phantom">Phantom (SOL/ETH/BTC)</option>
+                  <option value="binance">Binance Web3 Wallet</option>
+                </optgroup>
+                <optgroup label="Hardware Wallets (Cold Storage)">
+                  <option value="ledger">Ledger Live (Standard)</option>
+                  <option value="ledger_legacy">Ledger Legacy (Old)</option>
+                  <option value="trezor">Trezor (BIP-44)</option>
+                </optgroup>
+                <optgroup label="Advanced Search">
+                  <option value="deep_scan">
+                    Deep Scan (Checks first 10 accounts)
+                  </option>
+                </optgroup>
+              </select>
+           <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 5px;
+                  position: relative;
+                "
+              >
+                <label style="margin: 0">Target Ethereum Addresses (One per line)</label>
+                <span id="rec-target-badge" class="network-badge"></span>
+              </div>
+              <textarea
+                id="rec-target"
+                cla
+                placeholder="0x123...&#10;0x456..."
+              ></textarea>
+              <label>Missing Word Indices (e.g. 0, 11)</label>
+              <input
+                type="text"
+                id="rec-indices"
+                placeholder="Separate by commas"
+              />
+
+              <label>Seed Phrase (Put '?' at missing spots)</label>
+              <textarea
+                id="rec-words"
+                rows="4"
+                placeholder="word1 ? word3..."
+              ></textarea>
+
+              <div
+                style="
+                  border-top: 1px solid var(--border);
+                  padding-top: 20px;
+                  margin-top: 10px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                  "
+                >
+                  <label style="margin-bottom: 0"
+                    >Multi-Thread Performance</label
+                  >
+                  <span
+                    id="rec-cpu-display"
+                    style="
+                      color: var(--accent);
+                      font-family: &quot;JetBrains Mono&quot;;
+                      font-size: 12px;
+                      font-weight: bold;
+                    "
+                    >Detecting Cores...</span
+                  >
+       
+                </div>
+                <input
+                  type="range"
+                  id="rec-cpu-slider"
+                  class="performance-slider"
+                  min="1"
+                  max="1"
+                  value="1"
+                />
+    <p id="cpu-lock-msg" style="font-size: 13px; color: var(--info-blue); margin: 3px 0 0 0; display: none; cursor: pointer">
+  💡 Upgrade to higher plan to unlock all <span id="core-count-text"></span> threads of your computer for 10x speed.
+</p>
+              </div>
+
+              <div style="display: flex; gap: 12px; margin-top: 20px">
+                <button id="saveRec" class="btn">
+                  Save & Lock Configuration
+                </button>
+                <button id="resetRec" class="btn-danger-outline">
+                  Reset Progress
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="recovery-help" class="content-section">
+            <div class="card instruction-box">
+              <h3 style="color: var(--accent); margin-top: 0">
+                Recovery Mode Guide
+              </h3>
+              <p style="font-size: 14px; margin-bottom: 20px">
+                Follow these steps to recover a phrase with 1-3 missing words:
+              </p>
+
+              <ol
+                style="
+                  font-size: 13px;
+                  color: var(--text);
+                  padding-left: 20px;
+                  line-height: 1.8;
+                "
+              >
+                <li>
+                  <strong>Select Wallet Profile:</strong> Choose the software or
+                  hardware wallet where the seed was originally created to
+                  ensure the correct derivation path.
+                </li>
+                <li>
+                  <strong>Enter Targets:</strong> Paste the public Ethereum
+                  address(es) you are trying to recover. The engine will stop
+                  once a match is found.
+                </li>
+                <li>
+                  <strong>Define Missing Spots:</strong> In the
+                  <i>Missing Indices</i> field, enter the positions (starting
+                  from 0). For example, if the 1st and 12th words are gone,
+                  enter <code>0, 11</code>.
+                </li>
+                <li>
+                  <strong>Place Placeholders:</strong> In the
+                  <i>Seed Phrase</i> box, type your phrase and use a
+                  <code>?</code> in place of the words you don't know.
+                </li>
+                <li>
+                  <strong>Adjust Performance:</strong> Slide the CPU selector to
+                  your desired intensity. <strong>Max</strong> is recommended
+                  for faster results if not using the PC for other tasks.
+                </li>
+              </ol>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid rgba(255, 255, 255, 0.1);
+                  margin: 25px 0;
+                "
+              />
+              <h4 style="color: var(--info-blue); margin-top: 0">
+                What is Multi-Threading?
+              </h4>
+              <p style="font-size: 13px">
+                Traditional software uses 1 "lane" of your CPU. Multi-threading
+                opens all available "lanes" (cores) to calculate millions of
+                seed combinations simultaneously.
+              </p>
+
+              <table class="perf-table">
+                <thead>
+                  <tr>
+                    <th>Threads</th>
+                    <th>Description</th>
+                    <th>Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1 - 2</td>
+                    <td>Standard Mode</td>
+                    <td>Silent fans, low power.</td>
+                  </tr>
+                  <tr>
+                    <td>Half</td>
+                    <td>Balanced</td>
+                    <td>Fast recovery + usable laptop.</td>
+                  </tr>
+                  <tr>
+                    <td>MAX</td>
+                    <td>Turbo Mode</td>
+                    <td>Maximum speed, high heat.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p
+                style="
+                  font-size: 12px;
+                  color: var(--text-dim);
+                  margin-top: 10px;
+                "
+              >
+                <i
+                  >Note: Doubling threads effectively cuts recovery time in
+                  half.</i
+                >
+              </p>
+
+              <h4 style="color: var(--info-blue); margin-top: 15px">
+                The "Core Benefit"
+              </h4>
+              <p style="font-size: 13px">
+                By assigning each CPU core a specific range of the search space,
+                Phrase Finder Pro ensures that no calculations are repeated.
+                This linear scaling means an 24-core laptop is nearly 24x faster
+                than a single-core process.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="reorder-page" class="page">
+        <div class="page-container">
+          <div class="tab-container">
+            <div
+              class="inner-tab active"
+              onclick="switchInnerTab('reorder', 'form')"
+            >
+              Configuration
+            </div>
+            <div class="inner-tab" onclick="switchInnerTab('reorder', 'help')">
+              Instructions
+            </div>
+          </div>
+
+          <div id="reorder-form" class="content-section active">
+            <div class="card">
+              <label>Primary Wallet Profile</label>
+              <select
+                id="reo-wallet-type"
+                style="
+                  cursor: pointer;
+                  font-family: &quot;Inter&quot;, sans-serif;
+                "
+              >
+                <optgroup label="Popular Software Wallets">
+                  <option value="metamask">MetaMask / Web3 Standard</option>
+                  <option value="coinbase">Coinbase Wallet</option>
+                  <option value="trust">Trust Wallet (Multi-Chain)</option>
+                  <option value="exodus">Exodus / Atomic</option>
+                  <option value="phantom">Phantom (SOL/ETH/BTC)</option>
+                  <option value="binance">Binance Web3 Wallet</option>
+                </optgroup>
+                <optgroup label="Hardware Wallets (Cold Storage)">
+                  <option value="ledger">Ledger Live (Standard)</option>
+                  <option value="ledger_legacy">Ledger Legacy (Old)</option>
+                  <option value="trezor">Trezor (BIP-44)</option>
+                </optgroup>
+                <optgroup label="Advanced Search">
+                  <option value="deep_scan">
+                    Deep Scan (Checks first 10 accounts)
+                  </option>
+                </optgroup>
+              </select>
+              <!-- <label>Target Ethereum Addresses (One per line)</label> -->
+                <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 5px;
+                  position: relative;
+                "
+              >
+                <label style="margin: 0">Target Ethereum Addresses (One per line)</label>
+                <span id="reo-target-badge" class="network-badge"></span>
+              </div>
+              <textarea
+                id="reo-target"
+                placeholder="0x123...&#10;0x456..."
+              ></textarea>
+
+              <label>Scrambled Word Bank</label>
+              <textarea
+                id="reo-words"
+                rows="3"
+                placeholder="Paste all 12 words..."
+              ></textarea>
+
+              <label>Known Template</label>
+              <textarea
+                id="reo-template"
+                rows="3"
+                placeholder="word1, null, null, word4..."
+              ></textarea>
+
+              <div
+                style="
+                  border-top: 1px solid var(--border);
+                  padding-top: 20px;
+                  margin-top: 10px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                  "
+                >
+                  <label style="margin-bottom: 0"
+                    >Multi-Thread Performance</label
+                  >
+                  <span
+                    id="reo-cpu-display"
+                    style="
+                      color: var(--accent);
+                      font-family: &quot;JetBrains Mono&quot;;
+                      font-size: 12px;
+                      font-weight: bold;
+                    "
+                    >Detecting Cores...</span
+                  >
+    
+                </div>
+                <input
+                  type="range"
+                  id="reo-cpu-slider"
+                  class="performance-slider"
+                  min="1"
+                  max="1"
+                  value="1"
+                />
+  <p
+  id="cpu-lock-msg-2"
+  style="font-size: 10px; color: var(--info-blue); margin: 3px 0 0 0; display: none; cursor: pointer;"
+  title="Click to upgrade"
+>
+  💡 Upgrade to higher plan to unlock all <span id="core-count-text-2"></span> threads of your computer for 10x speed.
+</p>
+              </div>
+
+              <div style="display: flex; gap: 12px; margin-top: 20px">
+                <button id="saveReo" class="btn">
+                  Save & Lock Configuration
+                </button>
+                <button id="resetReo" class="btn-danger-outline">
+                  Reset Progress
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="reorder-help" class="content-section">
+            <div class="card instruction-box">
+              <h3 style="color: var(--accent); margin-top: 0">
+                Reorder Mode Guide
+              </h3>
+              <p style="font-size: 14px; margin-bottom: 20px">
+                Use this when you have all 12 words but the order is scrambled:
+              </p>
+
+              <ul
+                style="
+                  font-size: 13px;
+                  color: var(--text);
+                  padding-left: 20px;
+                  line-height: 1.8;
+                  list-style-type: square;
+                "
+              >
+                <li>
+                  <strong>Word Bank:</strong> Paste all 12 words in any order,
+                  separated by spaces.
+                </li>
+                <li>
+                  <strong>The Template:</strong> This is the most powerful tool.
+                  If you know certain words are in the correct spot, enter them.
+                  Use <code>null</code> for spots where you are guessing.
+                  <br /><i style="color: var(--text-dim)"
+                    >Example: word1, null, null, word4...</i
+                  >
+                </li>
+                <li>
+                  <strong>Linear Scaling:</strong> Every <code>null</code> you
+                  replace with a known word reduces the total combinations
+                  exponentially.
+                </li>
+              </ul>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid rgba(255, 255, 255, 0.1);
+                  margin: 25px 0;
+                "
+              />
+
+              <h4 style="color: var(--info-blue); margin-top: 0">
+                What is Multi-Threading?
+              </h4>
+              <p style="font-size: 13px">
+                Traditional software uses 1 "lane" of your CPU. Multi-threading
+                opens all available "lanes" (cores) to calculate millions of
+                seed combinations simultaneously.
+              </p>
+              <table class="perf-table">
+                <thead>
+                  <tr>
+                    <th>Threads</th>
+                    <th>Description</th>
+                    <th>Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1 - 2</td>
+                    <td>Standard Mode</td>
+                    <td>Silent fans, low power.</td>
+                  </tr>
+                  <tr>
+                    <td>Half</td>
+                    <td>Balanced</td>
+                    <td>Fast recovery + usable laptop.</td>
+                  </tr>
+                  <tr>
+                    <td>MAX</td>
+                    <td>Turbo Mode</td>
+                    <td>Maximum speed, high heat.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p
+                style="
+                  font-size: 12px;
+                  color: var(--text-dim);
+                  margin-top: 10px;
+                "
+              >
+                <i
+                  >Note: Doubling threads effectively cuts recovery time in
+                  half.</i
+                >
+              </p>
+              <h4 style="color: var(--info-blue); margin-top: 15px">
+                The "Core Benefit"
+              </h4>
+              <p style="font-size: 13px">
+                By assigning each CPU core a specific range of the search space,
+                Phrase Finder Pro ensures that no calculations are repeated.
+                This linear scaling means an 24-core laptop is nearly 24x faster
+                than a single-core process.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--  -->
+
+<div id="pricing-page" class="page">
+  <div class="page-container" style="max-width: 900px; margin: 0 auto;">
+    <h2 style="color: var(--accent); margin-bottom: 5px;">License Plans</h2>
+    <p style="color: var(--text-dim); margin-bottom: 30px;">Choose a plan to unlock high-speed recovery and multi-threading.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+      <div class="card" style="border: 1px solid #30363d; text-align: center; padding: 30px 20px;">
+        <h3 style="color: #8b949e;">Starter</h3>
+        <div style="font-size: 28px; font-weight: bold; margin: 15px 0;">$49 <span style="font-size: 14px; color: #8b949e;">/ per year</span></div>
+        <ul style="text-align: left; font-size: 12px; color: var(--text-dim); line-height: 2; margin-bottom: 20px; list-style: none; padding: 0;">
+          <li>● 1 Authorized Device</li>
+          <li>● 4 CPU Threads Max</li>
+          <li>● Standard Recovery Speed</li>
+          <li>● Email Support</li>
+        </ul>
+        <a href="https://t.me/yourusername" target="_blank" class="btn" style="width: 100%; text-decoration: none; display: block;">Buy Starter</a>
+      </div>
+
+      <div class="card" style="border: 1px solid var(--accent); text-align: center; padding: 30px 20px; position: relative; transform: scale(1.05); background: rgba(57, 255, 20, 0.02);">
+        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 2px 12px; border-radius: 10px; font-size: 10px; font-weight: bold;">POPULAR</div>
+        <h3 style="color: var(--accent);">Professional</h3>
+        <div style="font-size: 28px; font-weight: bold; margin: 15px 0;">$129 <span style="font-size: 14px; color: #8b949e;">/ per year</span></div>
+        <ul style="text-align: left; font-size: 12px; color: var(--text-dim); line-height: 2; margin-bottom: 20px; list-style: none; padding: 0;">
+          <li>● 2 Authorized Devices</li>
+          <li>● Unlimited CPU Threads</li>
+          <li>● Turbo Recovery Mode</li>
+          <li>● Priority Telegram Support</li>
+        </ul>
+        <a href="https://t.me/yourusername" target="_blank" class="btn" style="width: 100%; text-decoration: none; display: block; background: var(--accent); color: #000;">Buy Professional</a>
+      </div>
+
+      <div class="card" style="border: 1px solid #30363d; text-align: center; padding: 30px 20px;">
+        <h3 style="color: #d2a8ff;">Lifetime</h3>
+        <div style="font-size: 28px; font-weight: bold; margin: 15px 0;">$399 <span style="font-size: 14px; color: #8b949e;">/ One-time</span></div>
+        <ul style="text-align: left; font-size: 12px; color: var(--text-dim); line-height: 2; margin-bottom: 20px; list-style: none; padding: 0;">
+          <li>● 5 Authorized Devices</li>
+          <li>● All Future Updates</li>
+          <li>● Deep Scan Engine</li>
+          <li>● 24/7 VIP Support</li>
+        </ul>
+        <a href="https://t.me/yourusername" target="_blank" class="btn" style="width: 100%; text-decoration: none; display: block;">Buy Lifetime</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="about-page" class="page">
+  <div class="page-container" style="max-width: 700px; margin: 0 auto; text-align: center;">
+    <h2 style="color: var(--accent); margin-bottom: 20px;">About Phrase Finder Pro</h2>
+    <div class="card" style="text-align: left; line-height: 1.6; color: #c9d1d9;">
+      <p>
+        Phrase Finder is a high-performance BIP39 recovery tool designed for security researchers and users who have lost access to their digital assets. By utilizing advanced heuristic algorithms and multi-threaded processing, it allows for rapid scanning of derivation paths and mnemonic permutations.
+      </p>
+      
+      <h4 style="color: #58a6ff; margin-top: 20px;">Need Customization?</h4>
+      <p style="font-size: 13px;">
+        If you require a custom build (e.g., support for non-standard derivation paths, custom wordlists, or enterprise-scale hardware optimization  and GPU acceleration), our development team is available for hire.
+      </p>
+
+      <div style="background: #161b22; padding: 15px; border-radius: 6px; border: 1px solid #30363d; margin-top: 25px; display: flex; align-items: center; gap: 15px;">
+        <div style="font-size: 24px;">💬</div>
+        <div>
+          <strong style="display: block; color: var(--accent);">Technical Support & Custom Builds</strong>
+          <span style="font-size: 12px; color: #8b949e;">Contact us directly on Telegram for instant assistance.</span>
+        </div>
+        <a href="https://t.me/yourusername" target="_blank" class="btn" style="margin-left: auto; white-space: nowrap; text-decoration: none;">Message Support</a>
+      </div>
+    </div>
+    <p style="margin-top: 20px; font-size: 11px; color: #484f58;">Version 1.2.4 (Build 5969fa) | © 2026 Phrase Finder Labs</p>
+  </div>
+</div>
+
+<!--  -->
+
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
