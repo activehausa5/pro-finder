@@ -7,6 +7,7 @@
     "start": "electron electron-main.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
+    "rebuild": "electron-rebuild -f -w tiny-secp256k1,keccak",
     "dev": "nodemon --watch electron-main.js --watch payload.js --watch renderer.js --watch index.html --exec \"electron .\""
   },
   "dependencies": {
@@ -28,31 +29,52 @@
     "wif": "^5.0.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "electron": "30.2.0",
-    "electron-builder": "^24.6.0",
+    "electron-builder": "^24.13.3",
     "electron-reload": "^2.0.0-alpha.1",
     "nodemon": "^3.1.14"
   },
   "build": {
     "appId": "com.wallet.recovery",
     "productName": "Wallet Recovery Tool",
+    "asar": true,
     "files": [
-      "**/*"
+      "**/*",
+      "!dist/*",
+      "!.github/*"
     ],
-    "icon": "assets/logo.png", 
     "mac": {
       "icon": "assets/icon.icns",
+      "category": "public.app-category.utilities",
       "target": [
-        "dmg",
-        "zip"
-      ]
+        {
+          "target": "dmg",
+          "arch": "universal"
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
     },
     "win": {
       "icon": "assets/icon.ico",
       "target": [
-        "nsis",
-        "zip"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Wallet Recovery Tool"
     }
   }
 }
