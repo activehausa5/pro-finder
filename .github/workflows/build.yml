@@ -15,11 +15,30 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run rebuild
-      - run: npm run dist
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Rebuild Native Modules
+        run: npm run rebuild
+
+      - name: Package Application
+        run: npm run dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- THIS IS THE MISSING STEP FOR DOWNLOADS ---
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: RecoveryTool-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
