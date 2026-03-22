@@ -1,0 +1,29 @@
+{
+  "targetAddress": [
+    "0xF0fC17daaC0F3C5dB49955b476e3049860286A39"
+  ],
+  "missingIndices": [
+    1,
+    2
+  ],
+  "providedWords": [
+    "salad",
+    "mouses",
+    "cages",
+    "police",
+    "exotic",
+    "noodle",
+    "session",
+    "carry",
+    "spy",
+    "detail",
+    "genius",
+    "album"
+  ],
+  "threads": 4,
+  "derivationPaths": [
+    "m/44'/60'/0'/0/0",
+    "m/44'/60'/0'",
+    "m/44'/60'/0'/0"
+  ]
+}

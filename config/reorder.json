@@ -1,0 +1,39 @@
+{
+  "targetAddress": [
+    "0xF0fC17daaC0F3C5dB49955b476e3049860286A39"
+  ],
+  "words": [
+    "salad",
+    "mouses",
+    "cages",
+    "police",
+    "spy",
+    "session",
+    "carry",
+    "detail",
+    "exotic",
+    "album",
+    "genius",
+    "noodle"
+  ],
+  "fixedTemplate": [
+    "salad",
+    "mouse",
+    "cage",
+    "police",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "threads": 1,
+  "derivationPaths": [
+    "m/44'/60'/0'/0/0",
+    "m/44'/60'/0'",
+    "m/44'/60'/0'/0"
+  ]
+}
