@@ -11,7 +11,12 @@ import { TronWeb } from 'tronweb';
 const log = (msg) => process.send({ type: "log", message: msg });
 const checkpoint = (index) => process.send({ type: "checkpoint", index: index });
 
-const sendStats = (speed, total, progress, limit, lastAddr, lastPhrase) => process.send({ 
+const sendStats = (speed, total, progress, limit, lastAddr, lastPhrase) => {
+  // Only send stats every 1 second to avoid flooding the IPC channel
+  if (Date.now() - lastStatTime < 1000) return; 
+  lastStatTime = Date.now();
+  
+  process.send({ 
   type: "stats", 
   data: { 
     speed, 
@@ -21,7 +26,7 @@ const sendStats = (speed, total, progress, limit, lastAddr, lastPhrase) => proce
     lastCheckedAddress: lastAddr,
     lastCheckedPhrase: lastPhrase
   } 
-});
+})};
 
 // UTXO Network Configurations
 const NETWORKS = {
@@ -481,7 +486,11 @@ if(found) return;
     } catch (e) {}
   }
 
-  if (count % 500 === 0) await new Promise((r) => setImmediate(r));
+  // if (count % 500 === 0) await new Promise((r) => setImmediate(r));
+  // Optimize: Only yield the CPU every 10k iterations to maintain high speed
+  if (checkedCount % 10000 === 0) {
+      await new Promise((r) => setImmediate(r));
+  }
 }
 
 //log(`🏁 [Thread ${threadID}] Search complete.`);
