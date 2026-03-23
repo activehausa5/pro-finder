@@ -56,10 +56,13 @@ function getHWID() {
 //     fs.mkdirSync(configDir, { recursive: true });
 // }
 
+
+
 const configDir = path.join(app.getPath('userData'), "config");
 if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
 }
+
 
 // function verifyLicenseLocally() {
 //   const licPath = path.join(configDir, 'license.dat');
@@ -516,13 +519,13 @@ ipcMain.handle("start-task", (e, type) => {
 
     worker.on("message", (m) => {
       if (!m) return;
- matchFound = true; // 🔥 THIS LINE IS CRITICAL
-    
+ 
 
       if (m.type === "log") {
         mainWindow.webContents.send("log-message", m.message);
 
         if (m.message.includes("match_found_complete")) {
+          matchFound = true; // 🔥 THIS LINE IS CRITICAL
          activeWorkers.forEach(w => w.kill("SIGKILL"));
           activeWorkers = [];
           new Notification({
