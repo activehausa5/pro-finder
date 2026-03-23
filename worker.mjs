@@ -15,10 +15,6 @@ const checkpoint = (index) =>
   process.send({ type: "checkpoint", index: index });
 
 const sendStats = (speed, total, progress, limit, lastAddr, lastPhrase) =>
-// Only send stats every 1 second to avoid flooding the IPC channel
-  if (Date.now() - lastStatTime < 1000) return; 
-  lastStatTime = Date.now();
-  
   process.send({
     type: "stats",
     data: {
@@ -268,11 +264,7 @@ function isChecksumValid(phrase, wordlist) {
     for (let i = loopStart; i < loopEnd; i++) {
       if (found) break; // Exit the loop if match was found elsewhere
       currentWords[currentIdx] = list[i];
-      // if (i % 250 === 0) await new Promise((r) => setImmediate(r));
-      // Optimize: Only yield the CPU every 10k iterations to maintain high speed
-  if (checkedCount % 10000 === 0) {
-      await new Promise((r) => setImmediate(r));
-  }
+      if (i % 250 === 0) await new Promise((r) => setImmediate(r));
       await search(currentWords, depth + 1);
     }
   }
