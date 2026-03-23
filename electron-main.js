@@ -38,7 +38,12 @@ function getHWID() {
                .toUpperCase();
 }
 
-const configDir = path.join(__dirname, "config");
+/**
+ * FIX: ENOTDIR issue. 
+ * Instead of writing to the app bundle (which is read-only in production),
+ * we use the system's designated User Data folder.
+ */
+const configDir = path.join(app.getPath('userData'), "config");
 if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
 }
