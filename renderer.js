@@ -84,6 +84,7 @@ const CHAIN_CONFIGS = {
     }
 };
 
+
 /**
  * Universal Chain Detection Logic
  */
@@ -163,7 +164,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statusTag = document.getElementById("status-tag");
   let isRunning = false; 
   let currentActiveMode = "NONE";
-  let isMatchFound = false; 
+  let isMatchFound = false; // UPDATE: Global flag to track if a match was found in the current or previous run
   const successSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
 
   // --- STATS BAR INJECTION ---
@@ -184,24 +185,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- ETA FORMATTER ---
 const formatETA = (seconds) => {
     if (seconds <= 0 || !isFinite(seconds)) return "0s";
+
     const mo = Math.floor(seconds / (3600 * 24 * 30));
     const d  = Math.floor((seconds % (3600 * 24 * 30)) / (3600 * 24));
     const h  = Math.floor((seconds % (3600 * 24)) / 3600);
     const m  = Math.floor((seconds % 3600) / 60);
     const s  = Math.floor(seconds % 60);
+
+    // 30+ Days: Show Months and Days
     if (mo > 0) return `${mo}mo ${d}d ${h}h`;
+    
+    // 1-29 Days: Show Days, Hours, and Minutes
     if (d > 0)  return `${d}d ${h}h ${m}m`;
+    
+    // 1-23 Hours: Show Hours, Minutes, and Seconds
     if (h > 0)  return `${h}h ${m}m ${s}s`;
+    
+    // 1-59 Minutes: Show Minutes and Seconds
     if (m > 0)  return `${m}m ${s}s`;
+    
     return `${s}s`;
 };
 
+
 // --- Stats FORMATTER ---
-function formatNumber(num) {
-  if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-  if (num >= 1e9)  return (num / 1e9).toFixed(2) + 'B';
-  if (num >= 1e6)  return (num / 1e6).toFixed(2) + 'M';
-  if (num >= 1e3)  return (num / 1e3).toFixed(1) + 'K';
+   function formatNumber(num) {
+  if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T'; // Trillions
+  if (num >= 1e9)  return (num / 1e9).toFixed(2) + 'B';  // Billions
+  if (num >= 1e6)  return (num / 1e6).toFixed(2) + 'M';  // Millions
+  if (num >= 1e3)  return (num / 1e3).toFixed(1) + 'K';  // Thousands
   return num.toString();
 }
 
@@ -216,20 +228,31 @@ function formatNumber(num) {
     });
   } 
 
+ 
+
 const initCpuSliders = async () => {
   const auth = await window.api.checkAuth();
+  console.log("initCpuSliders CALLED");
+  console.log("AUTH STATUS:", auth.status);
+  console.log(auth);
+
   let totalCores = 4;
   try { totalCores = await window.api.getCoreCount() || 4; } catch(e) {}
 
+  // Update the core-count text for the Pro upgrade message
   const coreCountText = document.getElementById("core-count-text");
   const coreCountText2 = document.getElementById("core-count-text-2");
+  console.log(coreCountText2)
   if (coreCountText) coreCountText.textContent = totalCores;
-  if (coreCountText2) coreCountText2.textContent = totalCores;
+  if(coreCountText2) coreCountText2.textContent = totalCores
 
   const cpuLockMsg = document.getElementById("cpu-lock-msg");
   const cpuLockMsg2 = document.getElementById("cpu-lock-msg-2");
 
-  const setupSlider = (id, displayId, lockMsgEl) => {
+   console.log(cpuLockMsg2)
+  
+
+  const setupSlider = (id, displayId) => {
     const slider = document.getElementById(id);
     const display = document.getElementById(displayId);
     if (!slider || !display) return;
@@ -237,10 +260,20 @@ const initCpuSliders = async () => {
     const isStarter = auth.plan === "Starter";
     slider.max = isStarter ? Math.min(totalCores, 4) : totalCores;
 
-    if (lockMsgEl) {
-      lockMsgEl.style.display = isStarter ? "block" : "none";
-      lockMsgEl.onclick = () => Upgrade();
+    // Show or hide the lock message
+    if (cpuLockMsg) {cpuLockMsg.style.display = isStarter ? "block" : "none";
+      cpuLockMsg.addEventListener("click", async () => {
+     Upgrade()
+  });
+
     }
+     if (cpuLockMsg2){ cpuLockMsg2.style.display = isStarter ? "block" : "none";
+      cpuLockMsg2.addEventListener("click", async () => {
+    Upgrade()
+  });
+
+     }
+
 
     const updateLabel = (val) => {
       display.textContent = val + (val == 1 ? " Thread" : " Threads");
@@ -255,9 +288,12 @@ const initCpuSliders = async () => {
     updateLabel(slider.value); 
   };
 
-  setupSlider("rec-cpu-slider", "rec-cpu-display", cpuLockMsg);
-  setupSlider("reo-cpu-slider", "reo-cpu-display", cpuLockMsg2);
+  //setupSlider("rec-cpu-slider", "rec-cpu-display");
+  setupSlider("rec-cpu-slider", "rec-cpu-display");
+  setupSlider("reo-cpu-slider", "reo-cpu-display");
 };
+
+
 
 const Upgrade = async () => {
     const auth = await window.api.checkAuth();
@@ -312,54 +348,89 @@ const Upgrade = async () => {
         btnReo.textContent = "Start Reorder"; btnReo.classList.remove('loading');
       }
     } else {
+      // UPDATE: Always disable both buttons when system is running
       if (btnRec) btnRec.disabled = true;
       if (btnReo) btnReo.disabled = true;
     }
-    showActiveLicense();
+    // if (statusTag) {
+    //   const auth = await window.api.checkAuth();
+    //   statusTag.textContent = disabled ? "● System: Running..." : `● ${auth.plan.toUpperCase().slice(0,3)} LICENSE ACTIVE`;
+    //   statusTag.style.color = disabled ? "#8b949e" : "#238636";
+    // }
+     showActiveLicense()
   };
+
+
 
 const silentPing = async () => {
   try {
-    fetch('https://phrase-finder.onrender.com/ping', { mode: 'no-cors', priority: 'low' }).catch(() => {});
+    // We don't 'await' this in a way that blocks the UI
+    // We just fire the request and forget it
+    fetch('https://phrase-finder.onrender.com/ping', { 
+      mode: 'no-cors', // Ensures no CORS errors for a simple hit
+      priority: 'low'  // Tells the browser this isn't urgent
+    }).catch(() => {}); // Catch network errors silently
   } catch (e) {}
 };
 
+
   async function init() {
-    silentPing();
+    // Fire the ping immediately but don't wait for it
+    
+  silentPing();
     try {
       const auth = await window.api.checkAuth();
       if (auth.status === "active") {
         document.getElementById("auth-screen").style.display = "none";
-        await initCpuSliders(); 
-        await loadSavedConfigs(); 
+        await initCpuSliders(); await loadSavedConfigs(); 
         document.getElementById("rec-target")?.addEventListener("input", () => runSmartUIFeedback("rec-target"));
         document.getElementById("reo-target")?.addEventListener("input", () => runSmartUIFeedback("reo-target"));
-      } else {
+         showActiveLicense()
+      }
+      
+      
+      else {
+    
+      // If not active, show the "Preview" status
+        // statusTag.textContent = "● PREVIEW MODE (UNLICENSED)";
+        // statusTag.style.color = "#ffa657"; 
+       
         const displayID = auth.hostname || "Unknown Device";
         document.getElementById("hwid-field").value = displayID;
+          showActiveLicense()
       }
-      showActiveLicense();
-    } catch (e) {}
+
+    } catch (e) {
+      return 
+    }
   }
 
-async function showActiveLicense() {
+ async function showActiveLicense() {
   const statusTag = document.getElementById("status-tag");
   if (!statusTag) return;
+
   try {
     const auth = await window.api.checkAuth();
+    
     if (auth.status === "active") {
+      // Show license plan in the header
       statusTag.textContent = `● ${auth.plan.toUpperCase().slice(0,3)} LICENSE ACTIVE`;
-      statusTag.style.color = "#238636";
+      statusTag.style.color = "#238636"; // green for active
     } else {
+      // Show preview/unlicensed mode
       statusTag.textContent = "● PREVIEW MODE (UNLICENSED)";
-      statusTag.style.color = "#ffa657";
+      statusTag.style.color = "#ffa657"; // orange for preview
     }
   } catch (err) {
     statusTag.textContent = "● LICENSE STATUS UNKNOWN";
-    statusTag.style.color = "#f85149";
+    statusTag.style.color = "#f85149"; // red for error
+    console.error("Error fetching license status:", err);
   }
 }
 
+
+
+  // UPDATED: Added explicit binding for the Activation Button from your HTML (id="btn-activate")
   const activateBtn = document.getElementById("btn-activate");
   if (activateBtn) {
     activateBtn.addEventListener("click", async () => {
@@ -373,23 +444,30 @@ async function showActiveLicense() {
         return;
       }
 
+      
       activateBtn.disabled = true;
       activateBtn.textContent = "Verifying...";
       statusText.textContent = "Checking license status...";
       statusText.style.color = "var(--info-blue)";
 
       try {
+         const auth = await window.api.checkAuth();
         const result = await window.api.activateKey(key);
         if (result.ok) {
           statusText.textContent = "✅ Success! Launching...";
           statusText.style.color = "var(--accent)";
           setTimeout(() => {
-            init();
-            activateBtn.textContent = "Activate License";
-            statusText.textContent = "";
-            activateBtn.disabled = false;
-            keyField.value = "";
-          }, 2000);
+            
+            init()
+          activateBtn.textContent = "Activate License";
+          statusText.textContent = "";
+          statusText.style.color = "transparent";
+          activateBtn.disabled = false;
+          keyField.value = ""
+          showActiveLicense()
+          },2000); // Re-run init to hide screen
+         
+          
         } else {
           statusText.textContent = `❌ ${result.msg || "Invalid Key"}`;
           statusText.style.color = "var(--error)";
@@ -446,10 +524,11 @@ async function showActiveLicense() {
         const limit = msg.data.limit || 0;
 
         document.getElementById("stat-speed").textContent = speed.toLocaleString();
-        document.getElementById("stat-total").textContent = formatNumber(total);
+        document.getElementById("stat-total").textContent = formatNumber(total).toLocaleString();
         document.getElementById("stat-progress").textContent = msg.data.progress + "%";
-        if (limit) document.getElementById("stat-limit").textContent = formatNumber(limit);
+        if (limit) document.getElementById("stat-limit").textContent = formatNumber(limit).toLocaleString();
 
+        // --- Update ETA Display ---
         if (speed > 0 && limit > 0) {
             const remaining = limit - total;
             const secondsLeft = remaining / speed;
@@ -472,7 +551,7 @@ async function showActiveLicense() {
       if (/MATCH FOUND/i.test(msg) || /RECOVERY COMPLETE/i.test(msg)) {
         if (/MATCH FOUND/i.test(msg)) {
           successSound.play().catch(() => {});
-          isMatchFound = true; 
+          isMatchFound = true; // UPDATE: Track that a match happened
         }
         toggleExecutionButtons(false); 
         currentActiveMode = "NONE";
@@ -497,58 +576,100 @@ async function showActiveLicense() {
         if(id === "runRec" || id === "runReo") el.classList.add('success-glow', 'success-glow-text-hide');
       } catch (err) {
         el.classList.remove('loading'); el.classList.add('error-shake', 'success-glow-text-hide');
-        if (err.message !== "task_active") logBuffer.push(`❌ Error: ${err.message}`);
+        logBuffer.push(`❌ Error: ${err.message}`);
       } finally { setTimeout(() => el.classList.remove('success-glow', 'error-shake', 'success-glow-text-hide'), 1500); }
     });
   };
 
   bind("runRec", async () => {
-    const auth = await window.api.checkAuth();
-    if (auth.status !== "active") {
-        document.getElementById("hwid-field").value = auth.hostname || "Unknown Device";
+
+// 1. PRE-FLIGHT CHECK: Is the user authorized?
+    try {
+        const auth = await window.api.checkAuth();
+        if (auth.status !== "active") {
+            // If not active, show the auth screen and stop
+          const displayID = auth.hostname || "Unknown Device";
+         document.getElementById("hwid-field").value = displayID;
         document.getElementById("auth-screen").style.display = "flex";
-        return { ok: false, msg: "auth_required" }; 
+           // logBuffer.push("❌ ERROR: Unauthorized access. Please activate license.");
+        
+            return; 
+        }
+    } catch (e) {
+        logBuffer.push("❌ Auth System Error. Please restart the app.");
+        return;
     }
 
     const btn = document.getElementById("runRec");
-    const isResuming = document.getElementById("resume-badge").style.display === "inline-block";
+
+    btn.style.width = `${btn.offsetWidth}px`; btn.textContent = "Running...";
     
+    // UPDATE: Reset UI if a match was found before, but NOT if we are currently in "Resuming" state
+    const isResuming = document.getElementById("resume-badge").style.display === "inline-block";
     if (isMatchFound && !isResuming) {
         resetStatsUI();
         term.innerHTML = "> Resetting for new recovery search...";
         logBuffer = [];
-        isMatchFound = false;
+        isMatchFound = false; // Reset the flag for the new run
     }
 
-    btn.style.width = `${btn.offsetWidth}px`; btn.textContent = "Running...";
     currentActiveMode = "RECOVERY"; toggleExecutionButtons(true);
     await window.api.startTask("recovery");
   });
 
   bind("runReo", async () => {
-    const auth = await window.api.checkAuth();
-    if (auth.status !== "active") {
-        document.getElementById("hwid-field").value = auth.hostname || "Unknown Device";
+// 1. PRE-FLIGHT CHECK: Is the user authorized?
+    try {
+        const auth = await window.api.checkAuth();
+        if (auth.status !== "active") {
+            // If not active, show the auth screen and stop
+          const displayID = auth.hostname || "Unknown Device";
+         document.getElementById("hwid-field").value = displayID;
         document.getElementById("auth-screen").style.display = "flex";
-        return { ok: false, msg: "auth_required" };
+           // logBuffer.push("❌ ERROR: Unauthorized access. Please activate license.");
+        
+            return; 
+        }
+    } catch (e) {
+        logBuffer.push("❌ Auth System Error. Please restart the app.");
+        return;
     }
 
+
     const btn = document.getElementById("runReo");
-    const isResuming = document.getElementById("resume-badge").style.display === "inline-block";
+    btn.style.width = `${btn.offsetWidth}px`; btn.style.justifyContent = "center"; btn.textContent = "Running...";
     
+    // UPDATE: Reset UI if a match was found before, but NOT if we are currently in "Resuming" state
+    const isResuming = document.getElementById("resume-badge").style.display === "inline-block";
     if (isMatchFound && !isResuming) {
         resetStatsUI();
         term.innerHTML = "> Resetting for new reorder search...";
         logBuffer = [];
-        isMatchFound = false;
+        isMatchFound = false; // Reset the flag for the new run
     }
 
-    btn.style.width = `${btn.offsetWidth}px`; btn.textContent = "Running...";
     currentActiveMode = "REORDER"; toggleExecutionButtons(true);
     await window.api.startTask("reorder");
   });
 
   bind("stopTask", async () => {
+
+// 1. PRE-FLIGHT CHECK: Is the user authorized?
+    try {
+        const auth = await window.api.checkAuth();
+        if (auth.status !== "active") {
+            // If not active, show the auth screen and stop
+          const displayID = auth.hostname || "Unknown Device";
+         document.getElementById("hwid-field").value = displayID;
+        document.getElementById("auth-screen").style.display = "flex";
+           // logBuffer.push("❌ ERROR: Unauthorized access. Please activate license.");
+        
+            return; 
+        }
+    } catch (e) {
+        logBuffer.push("❌ Auth System Error. Please restart the app.");
+        return;
+    }
     await window.api.stopTask(); toggleExecutionButtons(false); 
     if (currentActiveMode !== "NONE") { logBuffer.push(`⚠️ ${currentActiveMode} Process Paused.`); currentActiveMode = "NONE"; }
   });
@@ -560,43 +681,79 @@ async function showActiveLicense() {
     document.getElementById("stat-progress").textContent = "0%";
     document.getElementById("stat-eta").textContent = "--";
     const cpu = document.getElementById("cpu-usage"); 
-    if(cpu) { cpu.textContent = "0%"; cpu.style.color = "#39ff14"; }
+    cpu.textContent = "0%"; cpu.style.color = "#39ff14";
   };
 
   bind("resetRec", async () => {
+
     const startBtn = document.getElementById("runRec");
-    if (startBtn.textContent.includes("Running...")) {
-      alert("🛑 TASK ONGOING: Please stop the task first.");
-      return { ok: false, msg: "task_active" };
-    }
+  
+  // 1. BLOCK IF ACTIVE: Prevent reset while the engine is running
+  // We check if the button text has changed to 'Running'
+  const isTaskRunning = startBtn.textContent.includes("Running...");
+// console.log(isTaskRunning, startBtn.textContent);
+  if (isTaskRunning) {
+    alert("🛑 TASK ONGOING: You cannot reset progress while the search is active. Please stop the task first.");
+    logBuffer.push("⚠️ Reset blocked: Engine is currently running.");
+    return { ok: false, msg: "task_active" };
+  }
+
     if (confirm("⚠️ Clear Recovery Progress?")) {
+      const btn = document.getElementById("resetRec"); const original = btn.textContent;
+      btn.style.width = `${btn.offsetWidth}px`; btn.disabled = true; btn.textContent = "Clearing..."; btn.classList.add('loading');
       const res = await window.api.resetProgress("recovery");
-      if (res.ok) { resetStatsUI(); logBuffer.push("🧹 Recovery cleared."); }
+      if (res.ok) {
+        resetStatsUI(); logBuffer.push("🧹 Recovery cleared.");
+        btn.classList.remove('loading'); btn.classList.add('error-shake'); btn.textContent = " Reset ✓";
+        setTimeout(() => { btn.classList.remove('error-shake'); btn.textContent = original; btn.style.width = ""; btn.disabled = false; }, 2000);
+      }
       return res;
     }
   });
 
   bind("resetReo", async () => {
-    const startBtn = document.getElementById("runReo");
-    if (startBtn.textContent.includes("Running...")) {
-      alert("🛑 TASK ONGOING: Please stop the task first.");
-      return { ok: false, msg: "task_active" };
-    }
+const startBtn = document.getElementById("runReo");
+  
+  // 1. BLOCK IF ACTIVE: Prevent reset while the engine is running
+  // We check if the button text has changed to 'Running'
+  const isTaskRunning = startBtn.textContent.includes("Running...");
+// console.log(isTaskRunning, startBtn.textContent);
+  if (isTaskRunning) {
+    alert("🛑 TASK ONGOING: You cannot reset progress while the search is active. Please stop the task first.");
+    logBuffer.push("⚠️ Reset blocked: Engine is currently running.");
+    return { ok: false, msg: "task_active" };
+  }
+
     if (confirm("⚠️ Clear Reorder Progress?")) {
+      const btn = document.getElementById("resetReo"); const original = btn.textContent;
+      btn.style.width = `${btn.offsetWidth}px`; btn.disabled = true; btn.textContent = "Clearing..."; btn.classList.add('loading');
       const res = await window.api.resetProgress("reorder");
-      if (res.ok) { resetStatsUI(); logBuffer.push("🧹 Reorder cleared."); }
+      if (res.ok) {
+        resetStatsUI(); logBuffer.push("🧹 Reorder cleared.");
+        btn.classList.remove('loading'); btn.classList.add('error-shake'); btn.textContent = " Reset ✓";
+        setTimeout(() => { btn.classList.remove('error-shake'); btn.textContent = original; btn.style.width = ""; btn.disabled = false; }, 2000);
+      }
       return res;
     }
   });
 
+
+
+
+
   bind("saveRec", async () => {
-    // 1. PRE-FLIGHT CHECK: Is the user authorized?
+
+
+// 1. PRE-FLIGHT CHECK: Is the user authorized?
     try {
         const auth = await window.api.checkAuth();
         if (auth.status !== "active") {
-            const displayID = auth.hostname || "Unknown Device";
-            document.getElementById("hwid-field").value = displayID;
-            document.getElementById("auth-screen").style.display = "flex";
+            // If not active, show the auth screen and stop
+          const displayID = auth.hostname || "Unknown Device";
+         document.getElementById("hwid-field").value = displayID;
+        document.getElementById("auth-screen").style.display = "flex";
+           // logBuffer.push("❌ ERROR: Unauthorized access. Please activate license.");
+        
             return; 
         }
     } catch (e) {
@@ -604,10 +761,8 @@ async function showActiveLicense() {
         return;
     }
 
-    const btn = document.getElementById("saveRec"); 
-    const original = btn.textContent;
+    const btn = document.getElementById("saveRec"); const original = btn.textContent;
     btn.style.width = `${btn.offsetWidth}px`; btn.disabled = true; btn.textContent = "Saving..."; btn.classList.add('loading');
-    
     const targetVal = document.getElementById("rec-target").value;
     const detection = detectChainFormat(targetVal.split(/[\s,]+/)[0] || "");
     const paths = (CHAIN_CONFIGS[detection.type] || CHAIN_CONFIGS['EVM']).paths;
@@ -619,28 +774,27 @@ async function showActiveLicense() {
       threads: parseInt(document.getElementById("rec-cpu-slider").value),
       derivationPaths: paths 
     };
-
     const result = await window.api.saveConfig("recovery", JSON.stringify(config, null, 2));
     if (result.ok) {
       btn.classList.remove('loading'); btn.classList.add('success-glow'); btn.textContent = "Saved ✓";
-      const timeEl = document.getElementById('last-save-time'); 
-      if (timeEl) timeEl.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      setTimeout(() => { 
-          btn.classList.remove('success-glow'); btn.textContent = original; 
-          btn.style.width = ""; btn.disabled = false; 
-      }, 2000);
+      const timeEl = document.getElementById('last-save-time'); if (timeEl) timeEl.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      setTimeout(() => { btn.classList.remove('success-glow'); btn.textContent = original; btn.style.width = ""; btn.disabled = false; }, 2000);
     }
     return result;
   });
 
   bind("saveReo", async () => {
-    // 1. PRE-FLIGHT CHECK: Is the user authorized?
+
+// 1. PRE-FLIGHT CHECK: Is the user authorized?
     try {
         const auth = await window.api.checkAuth();
         if (auth.status !== "active") {
-            const displayID = auth.hostname || "Unknown Device";
-            document.getElementById("hwid-field").value = displayID;
-            document.getElementById("auth-screen").style.display = "flex";
+            // If not active, show the auth screen and stop
+          const displayID = auth.hostname || "Unknown Device";
+         document.getElementById("hwid-field").value = displayID;
+        document.getElementById("auth-screen").style.display = "flex";
+           // logBuffer.push("❌ ERROR: Unauthorized access. Please activate license.");
+        
             return; 
         }
     } catch (e) {
@@ -648,10 +802,8 @@ async function showActiveLicense() {
         return;
     }
 
-    const btn = document.getElementById("saveReo"); 
-    const original = btn.textContent;
+    const btn = document.getElementById("saveReo"); const original = btn.textContent;
     btn.style.width = `${btn.offsetWidth}px`; btn.disabled = true; btn.textContent = "Saving..."; btn.classList.add('loading');
-    
     const targetVal = document.getElementById("reo-target").value;
     const detection = detectChainFormat(targetVal.split(/[\s,]+/)[0] || "");
     const paths = (CHAIN_CONFIGS[detection.type] || CHAIN_CONFIGS['EVM']).paths;
@@ -663,28 +815,29 @@ async function showActiveLicense() {
       threads: parseInt(document.getElementById("reo-cpu-slider").value),
       derivationPaths: paths 
     };
-
     const result = await window.api.saveConfig("reorder", JSON.stringify(config, null, 2));
     if (result.ok) {
       btn.classList.remove('loading'); btn.classList.add('success-glow'); btn.textContent = "Saved ✓";
-      const timeEl = document.getElementById('last-save-time'); 
-      if (timeEl) timeEl.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      setTimeout(() => { 
-          btn.classList.remove('success-glow'); btn.textContent = original; 
-          btn.style.width = ""; btn.disabled = false; 
-      }, 2000);
+      const timeEl = document.getElementById('last-save-time'); if (timeEl) timeEl.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      setTimeout(() => { btn.classList.remove('success-glow'); btn.textContent = original; btn.style.width = ""; btn.disabled = false; }, 2000);
     }
     return result;
   });
 
+
+
   bind("runValidation", async () => {
+
     // 1. PRE-FLIGHT CHECK: Is the user authorized?
     try {
         const auth = await window.api.checkAuth();
         if (auth.status !== "active") {
-            const displayID = auth.hostname || "Unknown Device";
-            document.getElementById("hwid-field").value = displayID;
-            document.getElementById("auth-screen").style.display = "flex";
+            // If not active, show the auth screen and stop
+          const displayID = auth.hostname || "Unknown Device";
+         document.getElementById("hwid-field").value = displayID;
+        document.getElementById("auth-screen").style.display = "flex";
+           // logBuffer.push("❌ ERROR: Unauthorized access. Please activate license.");
+        
             return; 
         }
     } catch (e) {
@@ -692,33 +845,15 @@ async function showActiveLicense() {
         return;
     }
 
-    const btn = document.getElementById("runValidation"); 
-    const input = document.getElementById("val-input").value.trim(); 
-    const original = btn.textContent;
-
-    if (!input) { 
-        btn.classList.add('error-shake'); 
-        setTimeout(() => btn.classList.remove('error-shake'), 500); 
-        return; 
-    }
-
+    const btn = document.getElementById("runValidation"); const input = document.getElementById("val-input").value.trim(); const original = btn.textContent;
+    if (!input) { btn.classList.add('error-shake'); setTimeout(() => btn.classList.remove('error-shake'), 500); return; }
     btn.style.width = `${btn.offsetWidth}px`; btn.disabled = true; btn.textContent = "Verifying..."; btn.classList.add('loading');
-    
     const result = await window.api.validateSeed(input);
-    const wordEl = document.getElementById("check-words"); 
-    const sumEl = document.getElementById("check-sum"); 
-    const addrEl = document.getElementById("check-address");
-
-    if (result.allWordsValid) { 
-        wordEl.textContent = "✅ Valid BIP39 Words"; wordEl.style.color = "var(--accent)"; 
-    } else { 
-        wordEl.textContent = `❌ Invalid: ${result.wordAnalysis.filter(w=>!w.valid).map(w=>w.word).join(", ")}`; 
-        wordEl.style.color = "var(--error)"; 
-    }
-
+    const wordEl = document.getElementById("check-words"); const sumEl = document.getElementById("check-sum"); const addrEl = document.getElementById("check-address");
+    if (result.allWordsValid) { wordEl.textContent = "✅ Valid BIP39 Words"; wordEl.style.color = "var(--accent)"; }
+    else { wordEl.textContent = `❌ Invalid: ${result.wordAnalysis.filter(w=>!w.valid).map(w=>w.word).join(", ")}`; wordEl.style.color = "var(--error)"; }
     sumEl.textContent = result.checksumValid ? "✅ Checksum Passed" : "❌ Checksum Failed";
     sumEl.style.color = result.checksumValid ? "var(--accent)" : "var(--error)";
-
     if (result.addresses) {
         const labels = { standard: "Standard (ETH)", metamask2: "MetaMask index 1", metamask3: "MetaMask index 2", ledger: "Ledger Live", legacy: "Legacy (MEW)" };
         addrEl.innerHTML = Object.entries(result.addresses).map(([key, addr]) => `
@@ -727,12 +862,8 @@ async function showActiveLicense() {
                   <div style="font-family: monospace; font-size: 12px; color: var(--info-blue); word-break: break-all;">${addr}</div>
               </div>`).join("");
     }
-
     btn.classList.remove('loading'); btn.classList.add('success-glow'); btn.textContent = "Verification Complete ✓";
-    setTimeout(() => { 
-        btn.classList.remove('success-glow'); btn.textContent = original; 
-        btn.style.width = ""; btn.disabled = false; 
-    }, 2500);
+    setTimeout(() => { btn.classList.remove('success-glow'); btn.textContent = original; btn.style.width = ""; btn.disabled = false; }, 2500);
   });
 
   bind("clearValidator", () => {
@@ -742,36 +873,30 @@ async function showActiveLicense() {
     document.getElementById("check-address").innerHTML = "0x0000000000000000000000000000000000000000";
   });
 
-  // Console Clearing Logic
   let clearBtn = document.getElementById("clearLog");
   if (!clearBtn) {
     clearBtn = document.createElement("button");
-    clearBtn.id = "clearLog"; clearBtn.className = "btn"; 
-    clearBtn.style.background = "#21262d"; clearBtn.style.marginLeft = "10px"; 
-    clearBtn.textContent = "Clear Console";
+    clearBtn.id = "clearLog"; clearBtn.className = "btn"; clearBtn.style.background = "#21262d"; clearBtn.style.marginLeft = "10px"; clearBtn.textContent = "Clear Console";
     const dashContainer = document.querySelector("#dash-page .page-container div");
     if (dashContainer) dashContainer.appendChild(clearBtn);
   }
-  clearBtn.addEventListener("click", () => { 
-      term.innerHTML = "> Console cleared..."; 
-      logBuffer = []; 
-  });
+  clearBtn.addEventListener("click", () => { term.innerHTML = "> Console cleared..."; logBuffer = []; });
 
-  // Modal & Sidebar Handlers
-  const closeAuth = document.getElementById("close-auth");
-  if (closeAuth) {
+
+  // Handler to hide the modal so they can see the UI
+const closeAuth = document.getElementById("close-auth");
+if (closeAuth) {
     closeAuth.addEventListener("click", () => {
         document.getElementById("auth-screen").style.display = "none";
         logBuffer.push("⚠️ System in Preview Mode. Activation required to run tasks.");
     });
-  }
+}
 
-  const sidebarUpgradeBtn = document.getElementById("sidebar-upgrade-btn");
-  if (sidebarUpgradeBtn) {
-    sidebarUpgradeBtn.addEventListener("click", Upgrade);
-  }
+// Sidebar Upgrade button
+const sidebarUpgradeBtn = document.getElementById("sidebar-upgrade-btn");
+if (sidebarUpgradeBtn) {
+  sidebarUpgradeBtn.addEventListener("click", Upgrade);
+}
 
   init();
 });
-
- 
